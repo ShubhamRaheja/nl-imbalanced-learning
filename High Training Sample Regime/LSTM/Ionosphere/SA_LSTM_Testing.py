@@ -38,6 +38,8 @@ _______________________________________________________________________________
     y_train         -   Corresponding labels for X_train.
     X_test          -   Data attributes for testing (20% of the dataset).
     y_test          -   Corresponding labels for X_test.
+    X_train_norm    -   Normalizised training data attributes (X_train).
+    X_test_norm     -   Normalized testing data attributes (X_test).
 _______________________________________________________________________________
 
 DL hyperparameter description:
@@ -96,7 +98,7 @@ _______________________________________________________________________________
 
 '''    
 # Import the IONOSPHERE Dataset 
-ionosphere = np.array(pd.read_csv('ionosphere_data.txt', sep=",", header=None))
+ionosphere = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Ionosphere/ionosphere_data.txt', sep=",", header=None))
 
 
 # Reading data and labels from the dataset

@@ -39,7 +39,8 @@ _______________________________________________________________________________
     y_train         -   Corresponding labels for X_train.
     X_test          -   Data attributes for testing (20% of the dataset).
     y_test          -   Corresponding labels for X_test.
-   
+    X_train_norm    -   Normalizised training data attributes (X_train).
+    X_test_norm     -   Normalized testing data attributes (X_test).
 _______________________________________________________________________________
 
 DL hyperparameter description:
@@ -107,15 +108,20 @@ iris = datasets.load_iris()
 X = iris.data
 y = iris.target
 
-# Normalisation of the data attributes - Column-wise
-X = (X - np.min(X,0))/(np.max(X,0) - np.min(X,0))
-X = np.reshape(X,(X.shape[0], 1, X.shape[1])) # Reshaping as tensor for LSTM algorithm.
-
 # Binary matrix representation of the labels
 y = to_categorical(y)
 
 # Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
+
+# Normalisation of the data attributes - Column-wise
+X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
+X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
+
+# Reshaping as tensor for LSTM algorithm.
+X_train_norm = np.reshape(X_train_norm ,(X_train_norm.shape[0], 1, X_train_norm.shape[1])) 
+X_test_norm = np.reshape(X_test_norm ,(X_test_norm.shape[0], 1, X_test_norm.shape[1])) 
+
 
 # Algorithm - LSTM / Building the model
 
@@ -127,7 +133,7 @@ def model_builder(hp):
     hp_dropout_rate = hp.Float('dropout_rate',min_value=0,max_value=0.5,step=0.1) # Selecting the dropout rate
     hp_learning_rate = hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4]) # Selecting the learning rate
                               
-    model.add(LSTM(units=hp_units, input_shape=(X_train.shape[1],X_train.shape[2])))
+    model.add(LSTM(units=hp_units, input_shape=(X_train_norm.shape[1],X_train_norm.shape[2])))
     model.add(Dropout(hp_dropout_rate))
     model.add(Dense(units=hp_dense,activation=hp_activation))
     model.add(Dense(y_train.shape[1], activation='softmax'))
@@ -152,7 +158,7 @@ tuner= RandomSearch(
 stop_early = EarlyStopping(monitor='val_loss',patience = 3)
 
 # Start the search    
-tuner.search(X_train,y_train,
+tuner.search(X_train_norm,y_train,
         epochs=50,
         batch_size=32,
         validation_split=0.2,
@@ -170,7 +176,7 @@ learning_rate = best_hps.get('learning_rate')
 
 # Re-build the LSTM model with the best hyperparameters
 model = tuner.hypermodel.build(best_hps)
-history = model.fit(X_train,
+history = model.fit(X_train_norm,
                     y_train,
                     epochs = 50,
                     validation_split = 0.2)

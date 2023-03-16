@@ -34,7 +34,8 @@ _______________________________________________________________________________
     y_train         -   Corresponding labels for X_train.
     X_test          -   Data attributes for testing (20% of the dataset).
     y_test          -   Corresponding labels for X_test.
-    
+    X_train_norm    -   Normalizised training data attributes (X_train).
+    X_test_norm     -   Normalized testing data attributes (X_test).
 _______________________________________________________________________________
 
 CFX hyperparameter description:
@@ -107,35 +108,34 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''    
-
-
 # Import the IONOSPHERE Dataset 
-ionosphere = np.array(pd.read_csv('ionosphere_data.txt', sep=",", header=None))
-
+ionosphere = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Ionosphere/ionosphere_data.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = ionosphere[:,range(0,ionosphere.shape[1]-1)], ionosphere[:,ionosphere.shape[1]-1].astype(str)
 
-
-# Norm: B -> 0;  G -> 1
+#Norm: B -> 0;  G -> 1
 y = y.reshape(len(y),1)
 y = np.char.replace(y, 'b', '0', count=None)
 y = np.char.replace(y, 'g', '1', count=None)
 y = y.astype(int)
 
-# Normalisation - Column-wise
-X = X
-X[:,range(2,X.shape[1])] = (X[:,range(2,X.shape[1])]-np.min(X[:,range(2,X.shape[1])],0))/(np.max(X[:,range(2,X.shape[1])],0)-np.min(X[:,range(2,X.shape[1])],0))
-X = X.astype(float)
-
-
 #Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
+
+#Normalisation - Column-wise
+X_train_norm = X_train
+X_train_norm[:,range(2,X_train.shape[1])] = (X_train[:,range(2,X_train.shape[1])]-np.min(X_train[:,range(2,X_train.shape[1])],0))/(np.max(X_train[:,range(2,X_train.shape[1])],0)-np.min(X_train[:,range(2,X_train.shape[1])],0))
+X_train_norm = X_train_norm.astype(float)
+X_test_norm = X_test
+X_test_norm[:,range(2,X_test.shape[1])] = (X_test[:,range(2,X_test.shape[1])]-np.min(X_test[:,range(2,X_test.shape[1])],0))/(np.max(X_test[:,range(2,X_test.shape[1])],0)-np.min(X_test[:,range(2,X_test.shape[1])],0))
+X_test_norm = X_test_norm.astype(float)
+
 
 # Validation
 INITIAL_NEURAL_ACTIVITY = [0.21]
 DISCRIMINATION_THRESHOLD = [0.969]
 EPSILON = np.arange(0.01, 0.49, 0.01)
-k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)
+k_cross_validation(X_train_norm, y_train, X_test_norm, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)
 
 

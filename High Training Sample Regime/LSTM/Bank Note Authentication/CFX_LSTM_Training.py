@@ -1,5 +1,5 @@
 """
-Created on Wed Mar 10, 2023
+Created on Fri Mar 10, 2023
 
 Author:  Shubham Raheja (shubhamraheja1999@gmail.com)
          Deeksha Sethi  (deeksha.sethi03@gmail.com)
@@ -115,16 +115,16 @@ X, y = bank[:,range(0,bank.shape[1]-1)], bank[:,bank.shape[1]-1]
 y = y.reshape(len(y),1)
 # X = X.astype(float)
 
-# Normalisation - Column-wise
-X = (X - np.min(X,0))/(np.max(X,0) - np.min(X,0))
-
-#Splitting the dataset for training and testing (80-20)
+# Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
 
+# Normalisation - Column-wise
+X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
+X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
 
 #validation
 FOLD_NO = 5
 INITIAL_NEURAL_ACTIVITY = [0.08]
 DISCRIMINATION_THRESHOLD = [0.25]
 EPSILON = [0.233]
-k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)# Validation
+k_cross_validation(X_train_norm, y_train, X_test_norm, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)# Validation

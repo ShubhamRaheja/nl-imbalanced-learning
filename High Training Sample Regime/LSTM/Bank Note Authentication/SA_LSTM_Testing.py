@@ -38,6 +38,8 @@ _______________________________________________________________________________
     y_train         -   Corresponding labels for X_train.
     X_test          -   Data attributes for testing (20% of the dataset).
     y_test          -   Corresponding labels for X_test.
+    X_train_norm    -   Normalizised training data attributes (X_train).
+    X_test_norm     -   Normalized testing data attributes (X_test).
 _______________________________________________________________________________
 
 DL hyperparameter description:
@@ -105,15 +107,19 @@ X, y = bank[:,range(0,bank.shape[1]-1)], bank[:,bank.shape[1]-1]
 y = y.reshape(len(y),1)
 # X = X.astype(float)
 
-# Normalisation - Column-wise
-X = (X - np.min(X,0))/(np.max(X,0) - np.min(X,0))
-X = np.reshape(X,(X.shape[0], 1, X.shape[1])) # Reshaping as tensor for LSTM algorithm.
-
 # Binary matrix representation of the labels
 y = to_categorical(y)
 
 #Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
+
+# Normalisation - Column-wise
+X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
+X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
+
+# Reshaping as tensor for LSTM algorithm.
+X_train_norm = np.reshape(X_train_norm,(X_train_norm.shape[0], 1, X_train_norm.shape[1]))
+X_test_norm = np.reshape(X_test_norm,(X_test_norm.shape[0], 1, X_test_norm.shape[1])) 
 
 # Algorithm - LSTM
 
@@ -142,7 +148,7 @@ else:
 # Build the model with best hyperparameters
 def model_builder(): 
     model = Sequential()       
-    model.add(LSTM(units=units_, input_shape=(X_train.shape[1],X_train.shape[2])))
+    model.add(LSTM(units=units_, input_shape=(X_train_norm.shape[1],X_train_norm.shape[2])))
     model.add(Dropout(dropout_rate))
     model.add(Dense(units=dense,activation=dense_activation))
     model.add(Dense(y_train.shape[1], activation='softmax'))
@@ -150,7 +156,7 @@ def model_builder():
                   optimizer=Adam(learning_rate=learning_rate_),
                   metrics = ['accuracy'])
     checkpointer = callbacks.ModelCheckpoint(filepath=RESULT_PATH_DL + "checkpoint.hdf5", verbose=1, monitor='accuracy', mode='max', save_best_only=True)
-    model.fit(X_train,
+    model.fit(X_train_norm,
               y_train,
               epochs = best_epoch,
               callbacks=[checkpointer])
@@ -163,7 +169,7 @@ model.load_weights(RESULT_PATH_DL + "checkpoint.hdf5")
 
 
 # Make predictions with trained model
-y_pred_testdata = np.argmax(model.predict(X_test), axis=1)
+y_pred_testdata = np.argmax(model.predict(X_test_norm), axis=1)
 y_test= np.argmax(y_test,axis=1)
 ACC = accuracy_score(y_test, y_pred_testdata)*100
 F1SCORE = f1_score(y_test, y_pred_testdata, average="macro")

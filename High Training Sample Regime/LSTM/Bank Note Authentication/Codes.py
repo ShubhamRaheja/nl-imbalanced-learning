@@ -69,8 +69,8 @@ def k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY
                 
                 def model_builder(hp):
                      model = Sequential()
-                     hp_units = hp.Int('units',min_value=8,max_value=128,step=8) # Selecting the number of LSTM units; min units = 8, max units = 128, step size = 8
-                     hp_dense = hp.Int('dense',min_value=8,max_value=128,step=8) # Selecting the number of dense units; min units = 8, max units = 128, step size = 8                                                                                                                        
+                     hp_units = hp.Int('units',min_value=8,max_value=256,step=8) # Selecting the number of LSTM units; min units = 8, max units = 128, step size = 8
+                     hp_dense = hp.Int('dense',min_value=8,max_value=256,step=8) # Selecting the number of dense units; min units = 8, max units = 128, step size = 8                                                                                                                        
                      hp_activation = hp.Choice('dense_activation',values=['relu', 'sigmoid'],default='relu') # Selecting the activation for dense layer
                      hp_dropout_rate = hp.Float('dropout_rate',min_value=0,max_value=0.5,step=0.1) # Selecting the dropout rate
                      hp_learning_rate = hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4]) # Selecting the learning rate

@@ -40,6 +40,8 @@ _______________________________________________________________________________
     y_train         -   Corresponding labels for X_train.
     X_test          -   Data attributes for testing (20% of the dataset).
     y_test          -   Corresponding labels for X_test.
+    X_train_norm    -   Normalizised training data attributes (X_train).
+    X_test_norm     -   Normalized testing data attributes (X_test).
 _______________________________________________________________________________
 
 DL hyperparameter description:
@@ -97,33 +99,38 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''
-
-
 # Import the IONOSPHERE Dataset 
-ionosphere = np.array(pd.read_csv('ionosphere_data.txt', sep=",", header=None))
-
+ionosphere = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Ionosphere/ionosphere_data.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = ionosphere[:,range(0,ionosphere.shape[1]-1)], ionosphere[:,ionosphere.shape[1]-1].astype(str)
 
-
-# Norm: B -> 0;  G -> 1
+#Norm: B -> 0;  G -> 1
 y = y.reshape(len(y),1)
 y = np.char.replace(y, 'b', '0', count=None)
 y = np.char.replace(y, 'g', '1', count=None)
 y = y.astype(int)
 
-# Normalisation - Column-wise
-X = X
-X[:,range(2,X.shape[1])] = (X[:,range(2,X.shape[1])]-np.min(X[:,range(2,X.shape[1])],0))/(np.max(X[:,range(2,X.shape[1])],0)-np.min(X[:,range(2,X.shape[1])],0))
-X = X.astype(float)
-X = np.reshape(X,(X.shape[0], 1, X.shape[1])) # Reshaping as tensor for LSTM algorithm.
 
 # Binary matrix representation of the labels
 y = to_categorical(y)
 
 #Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
+
+
+#Normalisation - Column-wise
+X_train_norm = X_train
+X_train_norm[:,range(2,X_train.shape[1])] = (X_train[:,range(2,X_train.shape[1])]-np.min(X_train[:,range(2,X_train.shape[1])],0))/(np.max(X_train[:,range(2,X_train.shape[1])],0)-np.min(X_train[:,range(2,X_train.shape[1])],0))
+X_train_norm = X_train_norm.astype(float)
+X_test_norm = X_test
+X_test_norm[:,range(2,X_test.shape[1])] = (X_test[:,range(2,X_test.shape[1])]-np.min(X_test[:,range(2,X_test.shape[1])],0))/(np.max(X_test[:,range(2,X_test.shape[1])],0)-np.min(X_test[:,range(2,X_test.shape[1])],0))
+X_test_norm = X_test_norm.astype(float)
+
+# Reshaping as tensor for LSTM algorithm.
+X_train_norm = np.reshape(X_train_norm ,(X_train_norm.shape[0], 1, X_train_norm.shape[1])) 
+X_test_norm = np.reshape(X_test_norm ,(X_test_norm.shape[0], 1, X_test_norm.shape[1])) 
+
 
 # Algorithm - LSTM / Building the model
 
@@ -135,7 +142,7 @@ def model_builder(hp):
     hp_dropout_rate = hp.Float('dropout_rate',min_value=0,max_value=0.5,step=0.1) # Selecting the dropout rate
     hp_learning_rate = hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4]) # Selecting the learning rate
                               
-    model.add(LSTM(units=hp_units, input_shape=(X_train.shape[1],X_train.shape[2])))
+    model.add(LSTM(units=hp_units, input_shape=(X_train_norm.shape[1],X_train_norm.shape[2])))
     model.add(Dropout(hp_dropout_rate))
     model.add(Dense(units=hp_dense,activation=hp_activation))
     model.add(Dense(y_train.shape[1], activation='softmax'))
@@ -160,7 +167,7 @@ tuner= RandomSearch(
 stop_early = EarlyStopping(monitor='val_loss',patience = 3)
 
 # Start the search    
-tuner.search(X_train,y_train,
+tuner.search(X_train_norm,y_train,
         epochs=50,
         batch_size=32,
         validation_split=0.2,
@@ -178,7 +185,7 @@ learning_rate = best_hps.get('learning_rate')
 
 # Re-build the LSTM model with the best hyperparameters
 model = tuner.hypermodel.build(best_hps)
-history = model.fit(X_train,
+history = model.fit(X_train_norm,
                     y_train,
                     epochs = 50,
                     validation_split = 0.2)
