@@ -7,6 +7,15 @@ Code Description: A python code to test the efficacy of CFX+LSTM on the Seeds da
 Dataset Source: https://archive.ics.uci.edu/ml/datasets/seeds
 
 """
+import os
+seed_value = 0
+os.environ['PYTHONHASHSEED'] = str(seed_value)
+import numpy as np
+import tensorflow as tf
+import random
+np.random.seed(42)
+random.seed(1259)
+tf.random.set_seed(94)
 
 import os
 import numpy as np
@@ -115,8 +124,6 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''    
-
-
 # Import the SEEDS Dataset 
 seeds = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Seeds/seeds_dataset.txt', sep="\t" ,header=None))
 
@@ -144,6 +151,7 @@ X_test_norm = X_test_norm.astype(float)
 
 PATH = os.getcwd()
 RESULT_PATH = PATH + '/CFX-TUNING/RESULTS/' 
+RESULT_PATH_DL = PATH + '/CFX-logs/check-points/'
 
 # Load the tuned hyperparamaters
 INA = np.load(RESULT_PATH+"/h_Q.npy")[0]
@@ -151,15 +159,10 @@ EPSILON_1 = np.load(RESULT_PATH+"/h_EPS.npy")[0]
 DT = np.load(RESULT_PATH+"/h_B.npy")[0]
 units_ = np.load(RESULT_PATH+"/h_Units.npy")
 dense = np.load(RESULT_PATH+"/h_Dense.npy")
-with open(RESULT_PATH+"/h_Activation.txt",'r') as file:
-    for line in file:
-        dense_activation = line
 dropout_rate = np.load(RESULT_PATH+"/h_DropoutRate.npy").item()
 learning_rate_ = np.load(RESULT_PATH+"/h_LearningRate.npy")
 best_epoch = np.load(RESULT_PATH+"/h_BestEpoch.npy")
-F1SCORE_train = np.load(RESULT_PATH+"/h_F1SCORE.npy")[0]
-
-RESULT_PATH_DL = PATH + '/CFX-logs/check-points/'
+F1SCORE_train = np.load(PATH+"/TESTING-RESULTS/CFX-RESULT/CFX_Train_F1SCORE.npy")[0]
 
 try:
     os.makedirs(RESULT_PATH)
@@ -168,10 +171,11 @@ except OSError:
 else:
     print ("Successfully created the result directory %s" % RESULT_PATH_DL)
     
-    
+# Extract CFX features    
 X_train_norm = CFX.transform(X_train_norm, INA, 10000, EPSILON_1, DT)
-X_test_norm = CFX.transform(X_test_norm, INA, 10000, EPSILON_1, DT)            
-
+X_test_norm = CFX.transform(X_test_norm, INA, 10000, EPSILON_1, DT)    
+        
+# Reshaping as tensor for LSTM algorithm
 X_train_norm = np.reshape(X_train_norm,(X_train_norm.shape[0], 1, X_train_norm.shape[1]))
 X_test_norm = np.reshape(X_test_norm,(X_test_norm.shape[0], 1, X_test_norm.shape[1]))
     
@@ -180,15 +184,15 @@ def model_builder():
     model = Sequential()       
     model.add(LSTM(units=units_, input_shape=(X_train_norm.shape[1],X_train_norm.shape[2])))
     model.add(Dropout(dropout_rate))
-    model.add(Dense(units=dense,activation=dense_activation))
+    model.add(Dense(units=dense,activation='relu'))
     model.add(Dense(y_train.shape[1], activation='softmax'))
     model.compile(loss='categorical_crossentropy', 
                   optimizer=Adam(learning_rate=learning_rate_),
                   metrics = ['accuracy'])
-    checkpointer = callbacks.ModelCheckpoint(filepath=RESULT_PATH_DL + "checkpoint.hdf5", verbose=1, monitor='accuracy', mode='max', save_best_only=True)
+    checkpointer = callbacks.ModelCheckpoint(filepath=RESULT_PATH_DL + "checkpoint.hdf5", verbose=1, monitor='loss', mode='min', save_best_only=True)
     model.fit(X_train_norm,
               y_train,
-              epochs = best_epoch,
+              epochs = 100,
               callbacks=[checkpointer])
               #validation_split = 0.2)
     return model
@@ -197,13 +201,13 @@ def model_builder():
 model = model_builder()
 model.load_weights(RESULT_PATH_DL + "checkpoint.hdf5")
 
-
-# Make predictions with trained model
+# Make predictions with trained model on test data
 y_pred_testdata = np.argmax(model.predict(X_test_norm), axis=1)
 y_test= np.argmax(y_test,axis=1)
 ACC = accuracy_score(y_test, y_pred_testdata)*100
 F1SCORE = f1_score(y_test, y_pred_testdata, average="macro")
-print('TEST: ACCURACY = ', ACC , " F1 SCORE = ", F1SCORE)
+print('TRAIN: F1 SCORE = ', F1SCORE_train)
+print('TEST: F1 SCORE = ', F1SCORE)
 
 # Create a path for saving the testing F1 Score
 RESULT_PATH_FINAL = PATH + '/' +'TESTING-RESULTS/CFX-RESULT'
@@ -215,5 +219,5 @@ except OSError:
 else:
     print ("Successfully created the result directory %s" % RESULT_PATH_FINAL)
     
-# Save the F1 Score for Standalone LSTM Algorithm
-np.save(RESULT_PATH_FINAL+"/CFX_F1SCORE.npy", (F1SCORE)) 
+# Save the F1 Score for CFX + LSTM Algorithm
+np.save(RESULT_PATH_FINAL+"/CFX_Test_F1SCORE.npy", (F1SCORE)) 

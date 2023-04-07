@@ -115,17 +115,15 @@ iris = datasets.load_iris()
 X = iris.data
 y = iris.target
 
-# Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
 
 # Normalisation of the data attributes - Column-wise
 X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
 X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
 
-
 # Validation
 
-INITIAL_NEURAL_ACTIVITY = [0.21]
-DISCRIMINATION_THRESHOLD = [0.969]
-EPSILON = np.arange(0.01, 0.49, 0.01)
-k_cross_validation( X_train_norm, y_train, X_test_norm, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)
+INITIAL_NEURAL_ACTIVITY = [0.141]
+DISCRIMINATION_THRESHOLD = [0.499]
+EPSILON = [0.147]
+k_cross_validation(X_train_norm, y_train, X_test_norm, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)

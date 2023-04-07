@@ -107,8 +107,6 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''    
-
-
 # Import the SEEDS Dataset 
 seeds = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Seeds/seeds_dataset.txt', sep="\t" ,header=None))
 

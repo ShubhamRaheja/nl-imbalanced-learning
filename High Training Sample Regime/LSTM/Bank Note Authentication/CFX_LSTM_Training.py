@@ -104,11 +104,8 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''    
-
-
 # Import the BANK NOTE AUTHENTICATION Dataset 
 bank = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Bank_Note_Authentication/data_banknote_authentication.txt', sep=",", header=None))
-
 
 # Reading data and labels from the dataset
 X, y = bank[:,range(0,bank.shape[1]-1)], bank[:,bank.shape[1]-1]
@@ -122,8 +119,7 @@ X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_st
 X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
 X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
 
-#validation
-FOLD_NO = 5
+# Validation
 INITIAL_NEURAL_ACTIVITY = [0.08]
 DISCRIMINATION_THRESHOLD = [0.25]
 EPSILON = [0.233]

@@ -108,11 +108,8 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''    
-
-
 # Import the BREAST CANCER WISCONSIN Dataset 
 breastcancer = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Breast Cancer Wisconsin/breast-cancer-wisconsin.txt', sep=",", header=None))
-
 
 # Reading data and labels from the dataset
 X, y = breastcancer[:,range(2,breastcancer.shape[1])], breastcancer[:,1].astype(str)
@@ -128,7 +125,6 @@ X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_st
 # Normalisation - Column-wise
 X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
 X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
-
 
 # Validation
 INITIAL_NEURAL_ACTIVITY = [0.93]

@@ -114,16 +114,16 @@ ionosphere = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbala
 # Reading data and labels from the dataset
 X, y = ionosphere[:,range(0,ionosphere.shape[1]-1)], ionosphere[:,ionosphere.shape[1]-1].astype(str)
 
-#Norm: B -> 0;  G -> 1
+# Norm: B -> 0;  G -> 1
 y = y.reshape(len(y),1)
 y = np.char.replace(y, 'b', '0', count=None)
 y = np.char.replace(y, 'g', '1', count=None)
 y = y.astype(int)
 
-#Splitting the dataset for training and testing (80-20)
+# Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
 
-#Normalisation - Column-wise
+# Normalisation - Column-wise
 X_train_norm = X_train
 X_train_norm[:,range(2,X_train.shape[1])] = (X_train[:,range(2,X_train.shape[1])]-np.min(X_train[:,range(2,X_train.shape[1])],0))/(np.max(X_train[:,range(2,X_train.shape[1])],0)-np.min(X_train[:,range(2,X_train.shape[1])],0))
 X_train_norm = X_train_norm.astype(float)
@@ -133,9 +133,9 @@ X_test_norm = X_test_norm.astype(float)
 
 
 # Validation
-INITIAL_NEURAL_ACTIVITY = [0.21]
+INITIAL_NEURAL_ACTIVITY = [0.680]
 DISCRIMINATION_THRESHOLD = [0.969]
-EPSILON = np.arange(0.01, 0.49, 0.01)
+EPSILON = [0.164]
 k_cross_validation(X_train_norm, y_train, X_test_norm, y_test, INITIAL_NEURAL_ACTIVITY, DISCRIMINATION_THRESHOLD, EPSILON)
 
 

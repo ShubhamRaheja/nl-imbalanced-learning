@@ -8,7 +8,6 @@ Dataset Source: https://archive.ics.uci.edu/ml/datasets/statlog+(heart)
 
 """
 
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -109,10 +108,8 @@ _______________________________________________________________________________
 
 '''    
 
-
 # Import the STATLOG Dataset 
 heart = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Statlog/heart.txt', sep=" ", header=None))
-
 
 # Reading data and labels from the dataset
 X, y = heart[:,range(0,heart.shape[1]-1)], heart[:,heart.shape[1]-1].astype(str)
@@ -121,18 +118,14 @@ y = np.char.replace(y, '2', '1', count=None)
 y = y.astype(float)
 y = y.reshape(len(y),1)
 
-
 # Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
-
 
 # Normalisation - Column-wise
 X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
 X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
 
-
 # Validation
-
 INITIAL_NEURAL_ACTIVITY = [0.080]
 DISCRIMINATION_THRESHOLD = [0.060]
 EPSILON = [0.17]

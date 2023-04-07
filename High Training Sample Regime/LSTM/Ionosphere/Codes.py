@@ -11,7 +11,15 @@ Updated for LSTM on Fri 24 Feb, 2023 by Shubham Raheja (shubhamraheja1999@gmail.
 """
 
 import os
+seed_value = 0
+os.environ['PYTHONHASHSEED'] = str(seed_value)
 import numpy as np
+import tensorflow as tf
+import random
+np.random.seed(43)
+random.seed(1260)
+tf.random.set_seed(96)
+
 from keras.utils.np_utils import to_categorical
 from sklearn.metrics import f1_score
 import ChaosFEX.feature_extractor as CFX
@@ -56,33 +64,30 @@ def k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY
             
             for EPSILON_1 in EPSILON:
                 
-                
-                
-                # Extract features
+                # Extract CFX features
                 X_train_cfx = CFX.transform(X_train, INA, 10000, EPSILON_1, DT)
                 X_test_cfx = CFX.transform(X_test, INA, 10000, EPSILON_1, DT)
+                
                 # Reshaping as tensor for LSTM algorithm.            
                 X_train_cfx = np.reshape(X_train_cfx,(X_train_cfx.shape[0], 1, X_train_cfx.shape[1]))
                 X_test_cfx = np.reshape(X_test_cfx,(X_test_cfx.shape[0], 1, X_test_cfx.shape[1]))
                 
                 def model_builder(hp):
                      model = Sequential()
-                     hp_units = hp.Int('units',min_value=8,max_value=128,step=8) # Selecting the number of LSTM units; min units = 8, max units = 128, step size = 8
-                     hp_dense = hp.Int('dense',min_value=8,max_value=128,step=8) # Selecting the number of dense units; min units = 8, max units = 128, step size = 8                                                                                                                        
-                     hp_activation = hp.Choice('dense_activation',values=['relu', 'sigmoid'],default='relu') # Selecting the activation for dense layer
+                     hp_units = hp.Int('units',min_value=16,max_value=128,step=16) # Selecting the number of LSTM units; min units = 16, max units = 128, step size = 16
+                     hp_dense = hp.Int('dense',min_value=16,max_value=128,step=16) # Selecting the number of dense units; min units = 16, max units = 128, step size = 16                                                                                                                        
                      hp_dropout_rate = hp.Float('dropout_rate',min_value=0,max_value=0.5,step=0.1) # Selecting the dropout rate
                      hp_learning_rate = hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4]) # Selecting the learning rate
                                                           
                      model.add(LSTM(units=hp_units, input_shape=(X_train_cfx.shape[1],X_train_cfx.shape[2])))
                      model.add(Dropout(hp_dropout_rate))
-                     model.add(Dense(units=hp_dense,activation=hp_activation))
+                     model.add(Dense(units=hp_dense,activation='relu'))
                      model.add(Dense(y_train.shape[1], activation='softmax'))
                      model.compile(loss='categorical_crossentropy', 
                                    optimizer=Adam(learning_rate=hp_learning_rate),
                                    metrics = ['accuracy'])
                      return model
-                 
-                    
+     
                 # Defining a Tuner class to run the search
                 tuner= RandomSearch(
                      model_builder, # Model-building function 
@@ -97,14 +102,14 @@ def k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY
                 # Stop early if validation loss remains the same for 3 epochs
                 stop_early = EarlyStopping(monitor='val_loss',patience = 3)
                  
-                                          
                 # Start the search    
                 tuner.search(X_train_cfx,
                               y_train,
                               epochs=50,
                               batch_size=32,
                               validation_split=0.2,
-                              callbacks = [stop_early]
+                              callbacks = [stop_early],
+                              shuffle = True
                             )
                 # Best Hyperparameters
                 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
@@ -113,22 +118,30 @@ def k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY
                 model = tuner.hypermodel.build(best_hps)
                 history = model.fit(X_train_cfx,
                                      y_train,
-                                     epochs = 50,
-                                     validation_split = 0.2)
+                                     epochs = 100,
+                                     validation_split = 0.2,
+                                     callbacks = [stop_early],
+                                     shuffle = True
+                                     )
                             
-                val_acc_per_epoch = history.history['val_accuracy']
-                best_epoch = val_acc_per_epoch.index(max(val_acc_per_epoch)) + 1
+                val_loss_per_epoch = history.history['val_loss']
+                best_epoch = val_loss_per_epoch.index(min(val_loss_per_epoch)) + 1
                  
                 hypermodel = tuner.hypermodel.build(best_hps)
                 hypermodel.fit(X_train_cfx,
                                 y_train,
-                                epochs = best_epoch)
-                # Make predictions with trained model
-                y_pred_testdata = np.argmax(hypermodel.predict(X_test_cfx), axis=-1)
-                #y_test= np.argmax(y_test,axis=1)
-                F1SCORE = f1_score(y_test, y_pred_testdata, average="macro")
+                                batch_size=32,
+                                epochs = best_epoch,
+                                shuffle = True
+                                )
+                # Make predictions with trained model on train data
+                y_pred_traindata = np.argmax(hypermodel.predict(X_train_cfx), axis=-1)
+                y_train= np.argmax(y_train,axis=1)
+                F1SCORE = f1_score(y_train, y_pred_traindata, average="macro")
                 print("F1-Score for Q = ", INA,"B = ", DT,"EPSILON = ", EPSILON_1," is  = ", (F1SCORE)) 
                 FSCORE_TEMP.append(F1SCORE)
+                
+                y_train = to_categorical(y_train)
                 
                 if(F1SCORE > BESTF1):
                     BESTF1 = F1SCORE
@@ -137,24 +150,17 @@ def k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY
                     BESTEPS = EPSILON_1
                     BEST_units = best_hps.get('units')
                     BEST_dense = best_hps.get('dense')
-                    BEST_dense_activation = best_hps.get('dense_activation')
                     BEST_dropout_rate = best_hps.get('dropout_rate')
                     BEST_learning_rate = best_hps.get('learning_rate')
             
-            
-                       
-            
 
-  
     print(FSCORE_TEMP)
     
-
     print("Saving Hyperparameter Tuning Results")
   
-
     PATH = os.getcwd()
     RESULT_PATH = PATH + '/CFX-TUNING/RESULTS/'
-    
+    RESULT_PATH_FINAL = PATH + '/TESTING-RESULTS/CFX-RESULT'
     
     try:
         os.makedirs(RESULT_PATH)
@@ -168,24 +174,18 @@ def k_cross_validation(X_train, y_train, X_test, y_test, INITIAL_NEURAL_ACTIVITY
     np.save(RESULT_PATH+"/h_EPS.npy", np.array([BESTEPS]) )
     np.save(RESULT_PATH+"/h_Units.npy", (BEST_units)) 
     np.save(RESULT_PATH+"/h_Dense.npy", (BEST_dense)) 
-    with open(RESULT_PATH+"/h_Activation.txt",'w') as file:
-        file.write(BEST_dense_activation)
     np.save(RESULT_PATH+"/h_DropoutRate.npy", (BEST_dropout_rate)) 
     np.save(RESULT_PATH+"/h_LearningRate.npy", (BEST_learning_rate)) 
     np.save(RESULT_PATH+"/h_BestEpoch.npy", best_epoch) 
-    np.save(RESULT_PATH+"/h_F1SCORE.npy", np.array([BESTF1]) ) 
+    np.save(RESULT_PATH_FINAL+"/CFX_Train_F1SCORE.npy", np.array([BESTF1]) ) 
 
-
-    
-    
-    
+    # Print the saved hyperparameters
     print("BEST F1SCORE", BESTF1)
     print("BEST INITIAL NEURAL ACTIVITY = ", BESTINA)
     print("BEST DISCRIMINATION THRESHOLD = ", BESTDT)
     print("BEST EPSILON = ", BESTEPS)
     print('LSTM Units:', BEST_units)
     print('Dense Layer Units:', BEST_dense)
-    print('Dense Layer Activation Function:', BEST_dense_activation)
     print('Dropout Rate:', BEST_dropout_rate)
     print('Learning Rate:', BEST_learning_rate)
     print('Best number of epochs:', best_epoch)

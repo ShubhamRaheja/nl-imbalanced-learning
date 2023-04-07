@@ -8,9 +8,16 @@ Dataset Source: https://archive.ics.uci.edu/ml/datasets/breast+cancer+wisconsin+
 
 """
 
-
 import os
+seed_value = 0
+os.environ['PYTHONHASHSEED'] = str(seed_value)
 import numpy as np
+import tensorflow as tf
+import random
+np.random.seed(38)
+random.seed(1254)
+tf.random.set_seed(89)
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from keras.optimizers import Adam
@@ -19,6 +26,7 @@ from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
 from keras_tuner.tuners import RandomSearch
 from keras.callbacks import EarlyStopping
+from sklearn.metrics import (f1_score,accuracy_score)
 
 '''
 _______________________________________________________________________________
@@ -100,11 +108,8 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''
-
-
 # Import the BREAST CANCER WISCONSIN Dataset 
 breastcancer = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Breast Cancer Wisconsin/breast-cancer-wisconsin.txt', sep=",", header=None))
-
 
 # Reading data and labels from the dataset
 X, y = breastcancer[:,range(2,breastcancer.shape[1])], breastcancer[:,1].astype(str)
@@ -132,15 +137,14 @@ X_test_norm = np.reshape(X_test_norm ,(X_test_norm.shape[0], 1, X_test_norm.shap
 
 def model_builder(hp):
     model = Sequential()
-    hp_units = hp.Int('units',min_value=8,max_value=256,step=8) # Selecting the number of LSTM units; min units = 8, max units = 128, step size = 8
-    hp_dense = hp.Int('dense',min_value=8,max_value=256,step=8) # Selecting the number of dense units; min units = 8, max units = 128, step size = 8                                                                                                                        
-    hp_activation = hp.Choice('dense_activation',values=['relu', 'sigmoid'],default='relu') # Selecting the activation for dense layer
+    hp_units = hp.Int('units',min_value=16,max_value=128,step=16) # Selecting the number of LSTM units; min units = 16, max units = 128, step size = 16
+    hp_dense = hp.Int('dense',min_value=16,max_value=128,step=16) # Selecting the number of dense units; min units = 16, max units = 128, step size = 16                                                                                                                        
     hp_dropout_rate = hp.Float('dropout_rate',min_value=0,max_value=0.5,step=0.1) # Selecting the dropout rate
     hp_learning_rate = hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4]) # Selecting the learning rate
                               
     model.add(LSTM(units=hp_units, input_shape=(X_train_norm.shape[1],X_train_norm.shape[2])))
     model.add(Dropout(hp_dropout_rate))
-    model.add(Dense(units=hp_dense,activation=hp_activation))
+    model.add(Dense(units=hp_dense,activation='relu'))
     model.add(Dense(y_train.shape[1], activation='softmax'))
     model.compile(loss='categorical_crossentropy', 
                   optimizer=Adam(learning_rate=hp_learning_rate),
@@ -166,6 +170,7 @@ stop_early = EarlyStopping(monitor='val_loss',patience = 3)
 tuner.search(X_train_norm,y_train,
         epochs=50,
         batch_size=32,
+        verbose= 1,
         validation_split=0.2,
         callbacks = [stop_early]
 )
@@ -174,7 +179,6 @@ tuner.search(X_train_norm,y_train,
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 units = best_hps.get('units')
 dense = best_hps.get('dense')
-dense_activation = best_hps.get('dense_activation')
 dropout_rate = best_hps.get('dropout_rate')
 learning_rate = best_hps.get('learning_rate')
 
@@ -183,17 +187,26 @@ learning_rate = best_hps.get('learning_rate')
 model = tuner.hypermodel.build(best_hps)
 history = model.fit(X_train_norm,
                     y_train,
-                    epochs = 50,
-                    validation_split = 0.2)
+                    epochs = 100,
+                    verbose= 1,
+                    batch_size= 32,
+                    validation_split = 0.2,
+                    shuffle = True)
 
-val_acc_per_epoch = history.history['val_accuracy']
-best_epoch = val_acc_per_epoch.index(max(val_acc_per_epoch)) + 1
+val_loss_per_epoch = history.history['val_loss']
+best_epoch = val_loss_per_epoch.index(min(val_loss_per_epoch)) + 1
+
+# Make predictions with trained model on train data
+y_pred_traindata = np.argmax(model.predict(X_train_norm), axis=1)
+y_train= np.argmax(y_train,axis=1)
+ACC = accuracy_score(y_train, y_pred_traindata)*100
+F1SCORE = f1_score(y_train, y_pred_traindata, average="macro")
+print('TRAIN: ACCURACY = ', ACC , " F1 SCORE = ", F1SCORE)
 
 # Printing best hyperparameters
 print('Best Hyperparameters:')
 print('LSTM Units:', units)
 print('Dense Layer Units:', dense)
-print('Dense Layer Activation Function:', dense_activation)
 print('Dropout Rate:', dropout_rate)
 print('Learning Rate:', learning_rate)
 print('Best number of epochs:', best_epoch)
@@ -202,6 +215,7 @@ print("Saving Hyperparameter Tuning Results")
 
 PATH = os.getcwd()
 RESULT_PATH = PATH + '/SA-TUNING/RESULTS/'
+RESULT_PATH_FINAL = PATH + '/TESTING-RESULTS/SA-RESULT'
 
 try:
     os.makedirs(RESULT_PATH)
@@ -209,11 +223,11 @@ except OSError:
     print ("Creation of the result directory %s not required" % RESULT_PATH)
 else:
     print ("Successfully created the result directory %s" % RESULT_PATH)
-
+    
+# Saving hyperparameters
 np.save(RESULT_PATH+"/h_Units.npy", (units)) 
 np.save(RESULT_PATH+"/h_Dense.npy", (dense)) 
-with open(RESULT_PATH+"/h_Activation.txt",'w') as file:
-    file.write(dense_activation)
 np.save(RESULT_PATH+"/h_DropoutRate.npy", (dropout_rate)) 
 np.save(RESULT_PATH+"/h_LearningRate.npy", (learning_rate)) 
 np.save(RESULT_PATH+"/h_BestEpoch.npy", best_epoch) 
+np.save(RESULT_PATH_FINAL+"/SA_Train_F1SCORE.npy", (F1SCORE))

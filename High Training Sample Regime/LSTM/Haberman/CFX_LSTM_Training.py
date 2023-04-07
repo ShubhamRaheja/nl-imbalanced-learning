@@ -107,11 +107,8 @@ _______________________________________________________________________________
 _______________________________________________________________________________
 
 '''    
-
-
 # Import the HABERMAN'S SURVIVAL Dataset 
 haberman = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Haberman/haberman.txt', sep=",", header=None))
-
 
 # Reading data and labels from the dataset
 X, y = haberman[:,range(0,haberman.shape[1]-1)], haberman[:,haberman.shape[1]-1].astype(str)
@@ -120,15 +117,12 @@ y = np.char.replace(y, '2', '1', count=None)
 y = y.astype(int)
 y = y.reshape(len(y),1)
 
-
 # Splitting the dataset for training and testing (80-20)
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
-
 
 # Normalisation - Column-wise
 X_train_norm = (X_train - np.min(X_train,0))/(np.max(X_train,0) - np.min(X_train,0))
 X_test_norm = (X_test - np.min(X_test,0))/(np.max(X_test,0) - np.min(X_test,0))
-
 
 # Validation
 INITIAL_NEURAL_ACTIVITY = [0.810]
