@@ -105,7 +105,7 @@ _______________________________________________________________________________
 
 '''    
 # Import the BANK NOTE AUTHENTICATION Dataset 
-bank = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Bank_Note_Authentication/data_banknote_authentication.txt', sep=",", header=None))
+bank = np.array(pd.read_csv('data_banknote_authentication.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = bank[:,range(0,bank.shape[1]-1)], bank[:,bank.shape[1]-1]

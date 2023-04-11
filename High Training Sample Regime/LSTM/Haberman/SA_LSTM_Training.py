@@ -108,7 +108,7 @@ _______________________________________________________________________________
 '''
 
 # Import the HABERMAN'S SURVIVAL Dataset 
-haberman = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Haberman/haberman.txt', sep=",", header=None))
+haberman = np.array(pd.read_csv('haberman.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = haberman[:,range(0,haberman.shape[1]-1)], haberman[:,haberman.shape[1]-1].astype(str)

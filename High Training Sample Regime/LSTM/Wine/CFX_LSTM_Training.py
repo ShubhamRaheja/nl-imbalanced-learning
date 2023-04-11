@@ -108,7 +108,7 @@ _______________________________________________________________________________
 
 '''    
 # Import the WINE Dataset 
-wine = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Wine/wine_data.txt', sep=",", header=None))
+wine = np.array(pd.read_csv('wine_data.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = wine[:,range(1,wine.shape[1])], wine[:,0]

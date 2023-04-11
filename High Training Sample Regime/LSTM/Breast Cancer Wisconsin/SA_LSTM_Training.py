@@ -109,7 +109,7 @@ _______________________________________________________________________________
 
 '''
 # Import the BREAST CANCER WISCONSIN Dataset 
-breastcancer = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Breast Cancer Wisconsin/breast-cancer-wisconsin.txt', sep=",", header=None))
+breastcancer = np.array(pd.read_csv('breast-cancer-wisconsin.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = breastcancer[:,range(2,breastcancer.shape[1])], breastcancer[:,1].astype(str)

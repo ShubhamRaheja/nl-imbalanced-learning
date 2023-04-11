@@ -106,7 +106,7 @@ _______________________________________________________________________________
 
 '''    
 # Import the IONOSPHERE Dataset 
-ionosphere = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Ionosphere/ionosphere_data.txt', sep=",", header=None))
+ionosphere = np.array(pd.read_csv('ionosphere_data.txt', sep=",", header=None))
 
 # Reading data and labels from the dataset
 X, y = ionosphere[:,range(0,ionosphere.shape[1]-1)], ionosphere[:,ionosphere.shape[1]-1].astype(str)

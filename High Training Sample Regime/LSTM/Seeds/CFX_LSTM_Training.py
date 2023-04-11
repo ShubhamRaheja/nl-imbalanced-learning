@@ -108,7 +108,7 @@ _______________________________________________________________________________
 
 '''    
 # Import the SEEDS Dataset 
-seeds = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Seeds/seeds_dataset.txt', sep="\t" ,header=None))
+seeds = np.array(pd.read_csv('seeds_dataset.txt', sep="\t" ,header=None))
 
 # Reading data and labels from the dataset
 X, y = seeds[:,range(0,seeds.shape[1]-1)], seeds[:,seeds.shape[1]-1]

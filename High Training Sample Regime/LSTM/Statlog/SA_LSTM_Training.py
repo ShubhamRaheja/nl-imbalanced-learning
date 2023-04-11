@@ -110,7 +110,7 @@ _______________________________________________________________________________
 
 '''
 # Import the STATLOG Dataset 
-heart = np.array(pd.read_csv('/home/harikrishnan/Desktop/ShubhamR/nl-imbalanced-learning-main/Datasets/Statlog/heart.txt', sep=" ", header=None))
+heart = np.array(pd.read_csv('heart.txt', sep=" ", header=None))
 
 # Reading data and labels from the dataset
 X, y = heart[:,range(0,heart.shape[1]-1)], heart[:,heart.shape[1]-1].astype(str)
